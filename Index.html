@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Tabel Deadline</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; table-layout: fixed; }
+    th, td { border: 1px solid #aaa; padding: 6px; text-align: center; }
+    th:nth-child(2), td:nth-child(2),
+    th:nth-child(3), td:nth-child(3) {
+      width: 20%;
+    }
+    input[type="datetime-local"] {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .flipflop { animation: blink 1s infinite; }
+    @keyframes blink {
+      50% { background-color: #ffff99; }
+      100% { background-color: transparent; }
+    }
+    .terlambat { background-color: #ffcccc !important; }
+    progress { width: 100%; height: 20px; }
+    .progress-row td { border: none; padding: 2px; }
+    button { margin: 10px 0; }
+    .dot-blink {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      margin-left: 4px;
+      border-radius: 50%;
+      background-color: red;
+      animation: dotBlink 1s infinite;
+    }
+    @keyframes dotBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<h2>Tabel Jadwal Deadline</h2>
+<button onclick="addRow()">+ Tambah Baris</button>
+<table id="deadlineTable">
+  <thead>
+    <tr>
+      <th>Keterangan</th>
+      <th>Waktu Awal</th>
+      <th>Waktu Akhir</th>
+      <th>Selesai?</th>
+    </tr>
+  </thead>
+  <tbody id="deadlineBody"></tbody>
+</table>
+
+<h3>Laporan Tugas Selesai (<span id="laporanCount">0</span>)</h3>
+<button onclick="exportCSV()">Export CSV</button>
+<table id="laporanTable">
+  <thead>
+    <tr>
+      <th>Keterangan</th>
+      <th>Waktu Awal</th>
+      <th>Waktu Akhir</th>
+      <th>Waktu Selesai</th>
+    </tr>
+  </thead>
+  <tbody id="laporanBody"></tbody>
+</table>
+
+<script>
+  const tableBody = document.getElementById("deadlineBody");
+  const laporanBody = document.getElementById("laporanBody");
+  const laporanCount = document.getElementById("laporanCount");
+
+  function saveData() {
+    const rows = [...tableBody.querySelectorAll("tr.main-row")];
+    const data = rows.map(row => {
+      const inputs = row.querySelectorAll("input");
+      return {
+        desc: inputs[0].value,
+        start: inputs[1].value,
+        end: inputs[2].value
+      };
+    });
+    localStorage.setItem("deadlineData", JSON.stringify(data));
+  }
+
+  function loadData() {
+    const saved = JSON.parse(localStorage.getItem("deadlineData") || "[]");
+    saved.forEach(item => addRow(item.desc, item.start, item.end));
+    const laporan = JSON.parse(localStorage.getItem("laporanData") || "[]");
+    laporan.forEach(item => addLaporan(item.desc, item.start, item.end, item.doneAt, false));
+  }
+
+  function addLaporan(desc, start, end, doneAt, save = true) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${desc}</td><td>${start}</td><td>${end}</td><td>${doneAt}</td>`;
+    laporanBody.appendChild(tr);
+    if (save) {
+      const data = JSON.parse(localStorage.getItem("laporanData") || "[]");
+      data.push({ desc, start, end, doneAt });
+      localStorage.setItem("laporanData", JSON.stringify(data));
+    }
+    laporanCount.textContent = laporanBody.children.length;
+  }
+
+  function addRow(desc = "", start = "", end = "") {
+    const mainRow = document.createElement("tr");
+    mainRow.classList.add("main-row");
+    mainRow.innerHTML = `
+      <td>
+        <input type="text" value="${desc}" onchange="saveData()">
+        <span class="dot-blink" style="display:none;"></span>
+      </td>
+      <td><input type="datetime-local" value="${start}" onchange="saveData()"></td>
+      <td><input type="datetime-local" value="${end}" onchange="saveData()"></td>
+      <td><input type="checkbox" onchange="handleCheckbox(this)"></td>
+    `;
+
+    const progressRow = document.createElement("tr");
+    progressRow.classList.add("progress-row");
+    const cell = document.createElement("td");
+    cell.colSpan = 4;
+    cell.innerHTML = `
+      <div style="margin-bottom:4px;">
+        Menuju Awal: 
+        <progress class="yellow" max="100" value="0" style="accent-color:gold;"></progress>
+        <span class="countdown-awal" style="margin-left:10px; font-weight:bold;"></span>
+      </div>
+      <div>
+        Progres Tugas: 
+        <progress class="green" max="100" value="0" style="accent-color:limegreen;"></progress>
+        <span class="countdown-akhir" style="margin-left:10px; font-weight:bold;"></span>
+      </div>
+    `;
+    progressRow.appendChild(cell);
+
+    tableBody.appendChild(mainRow);
+    tableBody.appendChild(progressRow);
+    saveData();
+  }
+
+  function handleCheckbox(checkbox) {
+    const row = checkbox.closest("tr");
+    const index = [...tableBody.querySelectorAll("tr.main-row")].indexOf(row);
+    const progressRow = tableBody.querySelectorAll("tr.progress-row")[index];
+
+    const desc = row.querySelector("input[type='text']").value;
+    const start = row.querySelectorAll("input")[1].value;
+    const end = row.querySelectorAll("input")[2].value;
+    const doneAt = new Date().toLocaleString();
+
+    addLaporan(desc, start, end, doneAt);
+    row.remove();
+    progressRow.remove();
+    saveData();
+  }
+
+  function updateProgress() {
+    const now = new Date();
+    const rows = [...tableBody.querySelectorAll("tr.main-row")];
+    const allRows = [...tableBody.children];
+    const activeElement = document.activeElement;
+    const activeRow = activeElement?.closest("tr");
+
+    const data = rows.map((row, i) => {
+      const inputs = row.querySelectorAll("input");
+      return {
+        index: i,
+        start: new Date(inputs[1].value || 0),
+        end: new Date(inputs[2].value || 0),
+        element: row,
+        progressRow: allRows[i * 2 + 1],
+        dot: row.querySelector(".dot-blink")
+      };
+    });
+
+    data.sort((a, b) => {
+      const diffA = Math.abs(a.start - now);
+      const diffB = Math.abs(b.start - now);
+      return diffA - diffB;
+    });
+
+    data.forEach(d => {
+      if (d.element !== activeRow) {
+        tableBody.appendChild(d.element);
+        tableBody.appendChild(d.progressRow);
+      }
+    });
+
+    data.forEach(d => {
+      const start = d.start;
+      const end = d.end;
+      const dot = d.dot;
+
+      d.element.classList.remove("flipflop", "terlambat");
+
+      const is30MenitLagi = !isNaN(start) && start - now <= 30 * 60 * 1000 && start > now;
+      dot.style.display = is30MenitLagi ? "inline-block" : "none";
+
+      const yellowBar = d.progressRow.querySelector("progress.yellow");
+      const greenBar = d.progressRow.querySelector("progress.green");
+      const countdownAwal = d.progressRow.querySelector(".countdown-awal");
+      const countdownAkhir = d.progressRow.querySelector(".countdown-akhir");
+
+      if (!isNaN(start) && start > now) {
+        const range = start - now;
+        const maxWait = 60 * 60 * 1000;
+        const percent = Math.max(0, Math.min(100, 100 * (1 - range / maxWait)));
+        yellowBar.value = percent;
+
+        const sisaMs = start - now;
+        const detik = Math.floor(sisaMs / 1000) % 60;
+        const menit = Math.floor(sisaMs / (1000 * 60)) % 60;
+        const jam = Math.floor(sisaMs / (1000 * 60 * 60));
+        countdownAwal.textContent = `${jam}j ${menit}m ${detik}d`;
+      } else {
+        yellowBar.value = 100;
+        countdownAwal.textContent = "Mulai";
+      }
+
+      if (!isNaN(start) && !isNaN(end) && end > start) {
+        const total = end - start;
+        const remaining = end - now;
+        const percent = Math.max(0, Math.min(100, 100 * (remaining / total)));
+
+        if (now >= start && now <= end) {
+          d.element.classList.add("flipflop");
+          greenBar.value = percent;
+
+          const sisaMs = end - now;
+          const detik = Math.floor(sisaMs / 1000) % 60;
+          const menit = Math.floor(sisaMs / (1000 * 60)) % 60;
+          const jam = Math.floor(sisaMs / (1000 * 60 * 60));
+          countdownAkhir.textContent = `${jam}j ${menit}m ${detik}d`;
+        } else if (now > end) {
+          d.element.classList.add("terlambat");
+          greenBar.value = 0;
+          countdownAkhir.textContent = "Terlambat";
+        } else {
+          greenBar.value = 100;
+          countdownAkhir.textContent = "-";
+        }
+      } else {
+        greenBar.value = 0;
+        countdownAkhir.textContent = "-";
+      }
+    });
+  }
+
+  function exportCSV() {
+    let csv = "Keterangan,Waktu Awal,Waktu Akhir,Waktu Selesai\n";
+    [...laporanBody.children].forEach(row => {
+      const cols = [...row.children].map(td => `"${td.textContent}"`);
+      csv += cols.join(",") + "\n";
+    });
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "laporan_deadline.csv";
+    a.click();
+  }
+
+  setInterval(updateProgress, 1000);
+  loadData();
+</script>
+
+</body>
+</html>
