@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time OCR Text Detection</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .camera-section, .results-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        #video {
+            width: 100%;
+            background: #000;
+            border-radius: 8px;
+        }
+        #canvas {
+            display: none;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .processing {
+            background-color: #fff3cd;
+        }
+        .success {
+            background-color: #d4edda;
+        }
+        .error {
+            background-color: #f8d7da;
+        }
+    </style>
+</head>
+<body>
+    <h1>Real-Time OCR Text Detection</h1>
+    
+    <div class="container">
+        <div class="camera-section">
+            <h2>Camera Feed</h2>
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+            <div>
+                <button id="captureBtn">Capture & Analyze</button>
+                <button id="continuousBtn">Start Continuous Analysis</button>
+                <button id="stopBtn" disabled>Stop Analysis</button>
+            </div>
+            <div id="status" class="status"></div>
+        </div>
+        
+        <div class="results-section">
+            <h2>OCR Results</h2>
+            <div id="results">
+                <p>No results yet. Click "Capture & Analyze" to begin.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureBtn = document.getElementById('captureBtn');
+        const continuousBtn = document.getElementById('continuousBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resultsDiv = document.getElementById('results');
+        const statusDiv = document.getElementById('status');
+        
+        let stream = null;
+        let continuousInterval = null;
+        let isContinuous = false;
+
+        // Start camera
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false 
+                });
+                video.srcObject = stream;
+                statusDiv.textContent = "Camera started successfully";
+                statusDiv.className = "status success";
+            } catch (err) {
+                statusDiv.textContent = `Error accessing camera: ${err.message}`;
+                statusDiv.className = "status error";
+                console.error("Camera error:", err);
+            }
+        }
+
+        // Capture image from video
+        function captureImage() {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL('image/jpeg');
+        }
+
+        // Perform OCR on image
+        async function performOCR(imageData) {
+            statusDiv.textContent = "Processing image...";
+            statusDiv.className = "status processing";
+            
+            try {
+                const { data: { text, lines, words } } = await Tesseract.recognize(
+                    imageData,
+                    'eng+ind', // English + Indonesian
+                    { 
+                        logger: m => {
+                            if (m.status) {
+                                statusDiv.textContent = `Status: ${m.status}`;
+                            }
+                        }
+                    }
+                );
+                
+                displayResults(text, lines, words);
+                statusDiv.textContent = "OCR completed successfully";
+                statusDiv.className = "status success";
+            } catch (err) {
+                statusDiv.textContent = `OCR Error: ${err.message}`;
+                statusDiv.className = "status error";
+                console.error("OCR error:", err);
+            }
+        }
+
+        // Display results in table format
+        function displayResults(text, lines, words) {
+            // Create table for detected words
+            let tableHTML = `
+                <h3>Full Detected Text</h3>
+                <div style="border:1px solid #ddd; padding:10px; margin-bottom:20px; background:#f9f9f9;">
+                    <pre>${text}</pre>
+                </div>
+                
+                <h3>Structured Data</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line No</th>
+                            <th>Text</th>
+                            <th>Confidence</th>
+                            <th>Position</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            lines.forEach(line => {
+                tableHTML += `
+                    <tr>
+                        <td>${line.line_num}</td>
+                        <td>${line.text}</td>
+                        <td>${Math.round(line.confidence)}%</td>
+                        <td>(x:${line.bbox.x0}, y:${line.bbox.y0}) to (x:${line.bbox.x1}, y:${line.bbox.y1})</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+                
+                <h3 style="margin-top:30px;">Word Details</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Word</th>
+                            <th>Confidence</th>
+                            <th>Line No</th>
+                            <th>Position</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            words.forEach(word => {
+                tableHTML += `
+                    <tr>
+                        <td>${word.text}</td>
+                        <td>${Math.round(word.confidence)}%</td>
+                        <td>${word.line_num}</td>
+                        <td>(x:${word.bbox.x0}, y:${word.bbox.y0}) to (x:${word.bbox.x1}, y:${word.bbox.y1})</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            resultsDiv.innerHTML = tableHTML;
+        }
+
+        // Event listeners
+        captureBtn.addEventListener('click', async () => {
+            if (!stream) {
+                statusDiv.textContent = "Camera not started. Please wait...";
+                statusDiv.className = "status error";
+                return;
+            }
+            
+            const imageData = captureImage();
+            await performOCR(imageData);
+        });
+
+        continuousBtn.addEventListener('click', () => {
+            if (!stream) {
+                statusDiv.textContent = "Camera not started. Please wait...";
+                statusDiv.className = "status error";
+                return;
+            }
+            
+            isContinuous = true;
+            continuousBtn.disabled = true;
+            stopBtn.disabled = false;
+            captureBtn.disabled = true;
+            
+            statusDiv.textContent = "Continuous analysis started (every 3 seconds)";
+            statusDiv.className = "status processing";
+            
+            // Analyze every 3 seconds
+            continuousInterval = setInterval(async () => {
+                const imageData = captureImage();
+                await performOCR(imageData);
+            }, 3000);
+        });
+
+        stopBtn.addEventListener('click', () => {
+            isContinuous = false;
+            clearInterval(continuousInterval);
+            continuousBtn.disabled = false;
+            stopBtn.disabled = true;
+            captureBtn.disabled = false;
+            
+            statusDiv.textContent = "Continuous analysis stopped";
+            statusDiv.className = "status";
+        });
+
+        // Initialize
+        startCamera();
+    </script>
+</body>
+</html>
