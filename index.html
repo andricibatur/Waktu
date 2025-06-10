@@ -2,244 +2,73 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Catatan Keuangan Interaktif</title>
+  <title>Beranda Proyek Andri Cibatur</title>
   <style>
-    body { font-family: Arial, sans-serif; transition: background-color 0.3s, color 0.3s;}
-    .node { display: block; margin: 10px; padding: 10px; border: 1px solid #000; cursor: pointer; }
-    .income { background-color: #d4edda; } /* Hijau */
-    .expense { background-color: #f8d7da; } /* Merah */
-    .expanded { transform: scale(1.05); }
-    .dark-mode { background-color: #333; color: #fff; }
-    .blink { animation: blink 1s infinite; }
-    .status-blink { animation: blink 1s infinite; color: red; }
-    @keyframes blink {
-      0% { opacity: 1; }
-      50% { opacity: 0; }
-      100% { opacity: 1; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background: #f9f9f9;
+      color: #333;
     }
-    button { margin: 3px; }
+    h1 {
+      text-align: center;
+      color: #005f73;
+    }
+    .project-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 40px;
+    }
+    .project {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      padding: 20px;
+      transition: transform 0.2s ease;
+    }
+    .project:hover {
+      transform: translateY(-5px);
+    }
+    .project a {
+      text-decoration: none;
+      color: #0077cc;
+      font-weight: bold;
+    }
+    .project p {
+      margin-top: 10px;
+      color: #666;
+      font-size: 0.9em;
+    }
   </style>
 </head>
 <body>
-
-<h2>Catatan Keuangan</h2>
-<button onclick="toggleDarkMode()">🌙 Dark Mode</button>
-
-<h3>Tambah Transaksi</h3>
-<select id="type">
-  <option value="income">Uang Masuk</option>
-  <option value="expense">Uang Keluar</option>
-</select>
-<input type="text" id="id" placeholder="ID">
-<input type="text" id="desc" placeholder="Keterangan">
-<input type="number" id="amount" placeholder="Jumlah">
-<button onclick="addTransaction()">Tambah</button>
-
-<div id="status"></div>
-
-<h3>Riwayat Transaksi</h3>
-<input type="text" id="search" onkeyup="filterNodes()" placeholder="Cari ID/Keterangan">
-<button onclick="exportCSV()">📄 Export CSV</button>
-<div id="total"></div>
-<div id="nodes"></div>
-
-<button onclick="printRaw()">🖨️ Print Semua (RawBT)</button>
-
-<script>
-  let transactions = {};
-  let db;
-
-  let request = indexedDB.open("FinancialDB", 1);
-  request.onupgradeneeded = function(event) {
-    db = event.target.result;
-    db.createObjectStore("transactions", { keyPath: "id" });
-  };
-  request.onsuccess = function(event) {
-    db = event.target.result;
-    loadTransactions();
-  };
-  request.onerror = function() {
-    console.error("Gagal membuka IndexedDB.");
-  };
-
-  function addTransaction() {
-    let type = document.getElementById("type").value;
-    let id = document.getElementById("id").value.trim();
-    let desc = document.getElementById("desc").value.trim();
-    let amount = parseFloat(document.getElementById("amount").value);
-
-    if (!id || !desc || isNaN(amount)) {
-      alert("Harap isi semua bidang!");
-      return;
-    }
-
-    let entry = {
-      desc: desc,
-      amount: amount,
-      type: type,
-      date: new Date().toISOString()
-    };
-
-    let transaction = transactions[id] || { id: id, entries: [] };
-    transaction.entries.push(entry);
-    transactions[id] = transaction;
-
-    saveTransaction(transaction);
-    updateNodes();
-  }
-
-  function saveTransaction(transaction) {
-    let tx = db.transaction(["transactions"], "readwrite");
-    let store = tx.objectStore("transactions");
-    store.put(transaction);
-  }
-
-  function loadTransactions() {
-    let tx = db.transaction(["transactions"], "readonly");
-    let store = tx.objectStore("transactions");
-    let request = store.getAll();
-
-    request.onsuccess = function() {
-      transactions = request.result.reduce((obj, item) => {
-        obj[item.id] = item;
-        return obj;
-      }, {});
-      updateNodes();
-    };
-  }
-
-  function updateNodes() {
-    let nodesDiv = document.getElementById("nodes");
-    nodesDiv.innerHTML = "";
-    let balance = 0;
-    let now = new Date();
-
-    Object.values(transactions).forEach(trans => {
-      let node = document.createElement("div");
-      node.className = "node";
-      node.onclick = function() { expandNode(this); };
-
-      let content = `<p><strong>ID: ${trans.id}</strong></p><ul>`;
-      let lastDate = new Date(0);
-      trans.entries.forEach(entry => {
-        let color = entry.type === "income" ? "green" : "red";
-        content += `<li style="color:${color}">${entry.desc}: Rp${entry.amount.toLocaleString()}</li>`;
-        balance += entry.type === "income" ? entry.amount : -entry.amount;
-        if (new Date(entry.date) > lastDate) lastDate = new Date(entry.date);
-      });
-      content += `</ul>`;
-      content += `<p><strong>Total Node: Rp${getNodeTotal(trans).toLocaleString()}</strong></p>`;
-      content += `<button onclick="event.stopPropagation(); printNode('${trans.id}')">🖨️ Print Node</button>`;
-
-      node.innerHTML = content;
-
-      let diffDays = (now - lastDate) / (1000 * 60 * 60 * 24);
-      if (diffDays >= 8) {
-        node.classList.add("blink");
-      }
-
-      nodesDiv.appendChild(node);
-    });
-
-    document.getElementById("total").innerHTML = `<h3>Total Saldo: Rp${balance.toLocaleString()}</h3>`;
-  }
-
-  function expandNode(node) {
-    node.classList.toggle("expanded");
-  }
-
-  function getNodeTotal(trans) {
-    return trans.entries.reduce((sum, e) => {
-      return sum + (e.type === "income" ? e.amount : -e.amount);
-    }, 0);
-  }
-
-  function filterNodes() {
-    let query = document.getElementById("search").value.toLowerCase();
-    let nodes = document.querySelectorAll(".node");
-    nodes.forEach(node => {
-      node.style.display = node.innerText.toLowerCase().includes(query) ? "block" : "none";
-    });
-  }
-
-  function printRaw() {
-    let output = "=== Catatan Keuangan ===\n";
-    Object.values(transactions).forEach(trans => {
-      output += `ID: ${trans.id}\n`;
-      trans.entries.forEach(entry => {
-        output += `${entry.desc}: Rp${entry.amount.toLocaleString()} (${entry.type === "income" ? "Masuk" : "Keluar"})\n`;
-      });
-      output += "----------------------\n";
-    });
-    sendToRawBT(output);
-  }
-
-  function printNode(id) {
-    const trans = transactions[id];
-    if (!trans) return;
-
-    let output = `ID: ${trans.id}\n`;
-    trans.entries.forEach(entry => {
-      output += `${entry.desc}: Rp${entry.amount.toLocaleString()} (${entry.type === "income" ? "Masuk" : "Keluar"})\n`;
-    });
-    output += `Total Node: Rp${getNodeTotal(trans).toLocaleString()}\n`;
-    output += "----------------------\n";
-    sendToRawBT(output);
-  }
-
-  function sendToRawBT(text) {
-    const link = document.createElement("a");
-    link.href = `rawbt:${encodeURIComponent(text)}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-
-  function exportCSV() {
-    let csv = "ID,Keterangan,Jumlah,Tipe,Tanggal\n";
-    Object.values(transactions).forEach(trans => {
-      trans.entries.forEach(entry => {
-        csv += `${trans.id},${entry.desc},${entry.amount},${entry.type},${entry.date}\n`;
-      });
-    });
-
-    let blob = new Blob([csv], { type: "text/csv" });
-    let link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "catatan_keuangan.csv";
-    link.click();
-  }
-
-  function toggleDarkMode() {
-    document.body.classList.toggle("dark-mode");
-  }
-
-  function monitorIdleNodes() {
-    const now = new Date();
-    const idleIDs = [];
-
-    Object.keys(transactions).forEach(id => {
-      const entries = transactions[id].entries;
-      if (entries.length === 0) return;
-
-      const last = new Date(entries[entries.length - 1].date);
-      const diffDays = Math.floor((now - last) / (1000 * 60 * 60 * 24));
-      if (diffDays >= 8) idleIDs.push(id);
-    });
-
-    const statusEl = document.getElementById("status");
-    if (idleIDs.length > 0) {
-      statusEl.innerText = "Node yang tidak aktif selama 8 hari: " + idleIDs.join(", ");
-      statusEl.classList.add("status-blink");
-    } else {
-      statusEl.innerText = "";
-      statusEl.classList.remove("status-blink");
-    }
-  }
-
-  setInterval(monitorIdleNodes, 10000);
-</script>
-
+  <h1>Proyek Andri Cibatur</h1>
+  <div class="project-list">
+    <div class="project">
+      <a href="waktu_andri.html" target="_blank">Aplikasi Waktu</a>
+      <p>Timer tugas harian dengan countdown dan progres bar.</p>
+    </div>
+    <a href="uang_cerdas.html" target="_blank">Aplikasi Waktu</a>
+      <p>Aplikasi Keuangan Cerdas.</p>
+  </div>
+    <div class="project">
+      <a href="ocr.html" target="_blank">Aplikasi OCR</a>
+      <p>aplikasi ocr.</p>
+    </div>
+    <div class="project">
+      <a href="tabungan.html" target="_blank">tabungan</a>
+      <p>Catat Tabungan & pengeluaran, ekspor CSV & JSON.</p>
+    </div>
+        <div class="project">
+      <a href="jadwalnode.html" target="_blank">JADWAL Penting</a>
+      <p>Catat Jadwal Penting, ekspor CSV & JSON.</p>
+        </div>
+        <div class="project">
+      <a href="mindmap.html" target="_blank">jadwal</a>
+      <p>Catat Tabungan & pengeluaran, ekspor CSV & JSON.</p>
+    </div>
+    <!-- Tambahkan proyek lain di sini -->
+  </div>
 </body>
 </html>
