@@ -3,1378 +3,440 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Catatan Keuangan</title>
+    <title>Aplikasi Catatan Keuangan Sederhana</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 1000px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
         }
         .input-section {
             display: flex;
-            gap: 20px;
-            margin-bottom: 30px;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         .input-box {
             flex: 1;
+            min-width: 300px;
             padding: 15px;
-            border-radius: 5px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .income {
-            background-color: #e6f7e6;
-            border: 1px solid #2ecc71;
+            background-color: #f0fff0;
+            border-left: 5px solid #2ecc71;
         }
         .expense {
-            background-color: #ffebee;
-            border: 1px solid #e74c3c;
+            background-color: #fff0f0;
+            border-left: 5px solid #e74c3c;
         }
         textarea {
             width: 100%;
-            height: 150px;
+            height: 120px;
             margin-bottom: 10px;
             padding: 10px;
-            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
         }
         button {
-            padding: 8px 15px;
+            padding: 10px 15px;
             background-color: #3498db;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            margin-right: 10px;
+            font-size: 16px;
+            transition: background 0.3s;
         }
         button:hover {
             background-color: #2980b9;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
         .report-section {
             margin-top: 30px;
         }
-        .report-row {
+        .report-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
             margin-bottom: 15px;
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-left: 5px solid #3498db;
         }
         .report-header {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             cursor: pointer;
-            font-weight: bold;
+            padding: 10px 0;
+        }
+        .report-header h3 {
+            margin: 0;
+            color: #2c3e50;
         }
         .report-content {
-            margin-top: 10px;
             display: none;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            margin-top: 10px;
         }
-        .active .report-content {
+        .report-card.active .report-content {
             display: block;
         }
-        .tab {
-            overflow: hidden;
-            border: 1px solid #ccc;
-            background-color: #f1f1f1;
-            border-radius: 5px 5px 0 0;
+        .toggle-icon {
+            font-size: 20px;
+            transition: transform 0.3s;
         }
-        .tab button {
-            background-color: inherit;
-            float: left;
-            border: none;
-            outline: none;
-            cursor: pointer;
-            padding: 14px 16px;
-            transition: 0.3s;
-            color: black;
+        .report-card.active .toggle-icon {
+            transform: rotate(180deg);
         }
-        .tab button:hover {
-            background-color: #ddd;
-        }
-        .tab button.active {
-            background-color: #3498db;
-            color: white;
-        }
-        .tabcontent {
-            display: none;
-            padding: 15px;
-            border: 1px solid #ccc;
-            border-top: none;
-            border-radius: 0 0 5px 5px;
-        }
-        .chart-container {
-            height: 300px;
-            margin-top: 20px;
-        }
-        .note-section {
-            margin-top: 20px;
-        }
-        .note-box {
+        table {
             width: 100%;
-            height: 100px;
-            padding: 10px;
-            box-sizing: border-box;
-            margin-bottom: 10px;
+            border-collapse: collapse;
+            margin-top: 10px;
         }
-        .error {
-            color: red;
-            margin-top: 5px;
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .income-text {
+            color: #2ecc71;
+        }
+        .expense-text {
+            color: #e74c3c;
+        }
+        .summary-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .summary-card h2 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .summary-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
         }
     </style>
 </head>
 <body>
     <h1>Aplikasi Catatan Keuangan</h1>
     
-    <div class="tab">
-        <button class="tablinks active" onclick="openTab(event, 'input')">Input Data</button>
-        <button class="tablinks" onclick="openTab(event, 'reports')">Laporan</button>
-        <button class="tablinks" onclick="openTab(event, 'analysis')">Analisis</button>
-        <button class="tablinks" onclick="openTab(event, 'backup')">Backup/Restore</button>
-        <button class="tablinks" onclick="openTab(event, 'notes')">Catatan</button>
-    </div>
-
-    <div id="input" class="tabcontent" style="display: block;">
-        <div class="input-section">
-            <div class="input-box income">
-                <h3>Pemasukan</h3>
-                <textarea id="incomeInput" placeholder="Format: Kategori,Jumlah\nContoh: Gaji,5000000\nBonus,1000000"></textarea>
-                <div id="incomeError" class="error"></div>
-                <button id="addIncomeBtn">Tambahkan Pemasukan</button>
-            </div>
-            <div class="input-box expense">
-                <h3>Pengeluaran</h3>
-                <textarea id="expenseInput" placeholder="Format: Kategori,Jumlah\nContoh: Makanan,150000\nTransportasi,300000"></textarea>
-                <div id="expenseError" class="error"></div>
-                <button id="addExpenseBtn">Tambahkan Pengeluaran</button>
-            </div>
+    <div class="input-section">
+        <div class="input-box income">
+            <h3>Pemasukan</h3>
+            <textarea id="incomeInput" placeholder="Format: Kategori,Jumlah\nContoh: Gaji,5000000\nBonus,1000000"></textarea>
+            <div id="incomeError" style="color:red; margin-bottom:10px;"></div>
+            <button id="addIncomeBtn">Tambahkan Pemasukan</button>
         </div>
         
-        <h2>Riwayat Transaksi</h2>
-        <table id="transactionTable">
-            <thead>
-                <tr>
-                    <th>Tanggal</th>
-                    <th>Tipe</th>
-                    <th>Kategori</th>
-                    <th>Jumlah</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody id="transactionBody">
-                <!-- Data akan dimasukkan di sini oleh JavaScript -->
-            </tbody>
-        </table>
-    </div>
-
-    <div id="reports" class="tabcontent">
-        <h2>Laporan Keuangan</h2>
-        
-        <div class="report-row">
-            <div class="report-header" onclick="toggleReport(this)">
-                <span>Saldo Saat Ini</span>
-                <span id="currentBalance">Rp0</span>
-            </div>
+        <div class="input-box expense">
+            <h3>Pengeluaran</h3>
+            <textarea id="expenseInput" placeholder="Format: Kategori,Jumlah\nContoh: Makanan,150000\nTransportasi,300000"></textarea>
+            <div id="expenseError" style="color:red; margin-bottom:10px;"></div>
+            <button id="addExpenseBtn">Tambahkan Pengeluaran</button>
         </div>
-        
-        <div class="report-row">
-            <div class="report-header" onclick="toggleReport(this)">
-                <span>Laporan Mingguan</span>
-                <span>▼</span>
+    </div>
+    
+    <div class="summary-card">
+        <h2>Saldo Saat Ini</h2>
+        <div id="currentBalance" class="summary-value">Rp0</div>
+    </div>
+    
+    <div class="report-section">
+        <div class="report-card">
+            <div class="report-header">
+                <h3>Riwayat Transaksi</h3>
+                <span class="toggle-icon">▼</span>
             </div>
             <div class="report-content">
-                <div id="weeklyChart" class="chart-container"></div>
-                <button id="copyWeeklyBtn">Salin Laporan Mingguan</button>
+                <table id="transactionTable">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Tipe</th>
+                            <th>Kategori</th>
+                            <th>Jumlah</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionBody"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="report-card">
+            <div class="report-header">
+                <h3>Laporan Mingguan</h3>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="report-content">
                 <div id="weeklyReport"></div>
+                <button id="copyWeeklyBtn" style="margin-top:10px;">Salin Laporan</button>
             </div>
         </div>
         
-        <div class="report-row">
-            <div class="report-header" onclick="toggleReport(this)">
-                <span>Laporan Bulanan</span>
-                <span>▼</span>
+        <div class="report-card">
+            <div class="report-header">
+                <h3>Laporan Bulanan</h3>
+                <span class="toggle-icon">▼</span>
             </div>
             <div class="report-content">
-                <div id="monthlyChart" class="chart-container"></div>
-                <button id="copyMonthlyBtn">Salin Laporan Bulanan</button>
                 <div id="monthlyReport"></div>
+                <button id="copyMonthlyBtn" style="margin-top:10px;">Salin Laporan</button>
             </div>
         </div>
         
-        <div class="report-row">
-            <div class="report-header" onclick="toggleReport(this)">
-                <span>Laporan Kategori</span>
-                <span>▼</span>
-            </div>
-            <div class="report-content">
-                <div id="categoryChart" class="chart-container"></div>
-                <div id="categoryReport"></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="analysis" class="tabcontent">
-        <h2>Analisis Keuangan</h2>
-        
-        <div class="report-row">
+        <div class="report-card">
             <div class="report-header">
-                <span>Rata-rata Pemasukan: <span id="avgIncome">Rp0</span></span>
-            </div>
-        </div>
-        
-        <div class="report-row">
-            <div class="report-header">
-                <span>Rata-rata Pengeluaran: <span id="avgExpense">Rp0</span></span>
-            </div>
-        </div>
-        
-        <div class="report-row">
-            <div class="report-header" onclick="toggleReport(this)">
-                <span>Prediksi Pertumbuhan</span>
-                <span>▼</span>
+                <h3>Analisis Keuangan</h3>
+                <span class="toggle-icon">▼</span>
             </div>
             <div class="report-content">
-                <div id="growthPrediction"></div>
+                <div style="margin-bottom:15px;">
+                    <h4>Rata-rata Pemasukan: <span id="avgIncome" class="income-text">Rp0</span></h4>
+                    <h4>Rata-rata Pengeluaran: <span id="avgExpense" class="expense-text">Rp0</span></h4>
+                </div>
+                <div id="growthPrediction" style="background:#f8f9fa; padding:10px; border-radius:5px;"></div>
+                <div id="bankruptcyPrediction" style="background:#f8f9fa; padding:10px; border-radius:5px; margin-top:10px;"></div>
             </div>
         </div>
-        
-        <div class="report-row">
-            <div class="report-header" onclick="toggleReport(this)">
-                <span>Prediksi Kebangkrutan</span>
-                <span>▼</span>
-            </div>
-            <div class="report-content">
-                <div id="bankruptcyPrediction"></div>
-            </div>
-        </div>
-        
-        <div class="report-row">
-            <div class="report-header" onclick="toggleReport(this)">
-                <span>Input Analisis ChatGPT</span>
-                <span>▼</span>
-            </div>
-            <div class="report-content">
-                <textarea id="chatgptInput" placeholder="Masukkan analisis dari ChatGPT di sini"></textarea>
-                <div id="analysisError" class="error"></div>
-                <button id="saveAnalysisBtn">Simpan Analisis</button>
-                <div id="savedAnalysis"></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="backup" class="tabcontent">
-        <h2>Backup dan Restore Data</h2>
-        
-        <div class="report-row">
-            <div class="report-header" onclick="toggleReport(this)">
-                <span>Export Data</span>
-                <span>▼</span>
-            </div>
-            <div class="report-content">
-                <button id="exportDataBtn">Export ke JSON</button>
-                <textarea id="exportDataArea" readonly style="height: 100px; margin-top: 10px;"></textarea>
-            </div>
-        </div>
-        
-        <div class="report-row">
-            <div class="report-header" onclick="toggleReport(this)">
-                <span>Import Data</span>
-                <span>▼</span>
-            </div>
-            <div class="report-content">
-                <textarea id="importDataArea" placeholder="Tempel data JSON di sini" style="height: 100px;"></textarea>
-                <div id="importError" class="error"></div>
-                <button id="importDataBtn">Import Data</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="notes" class="tabcontent">
-        <h2>Catatan dan Rencana Pembelian</h2>
-        
-        <div class="note-section">
-            <h3>Rencana Pembelian</h3>
-            <textarea id="purchasePlan" class="note-box" placeholder="Tulis rencana pembelian Anda di sini"></textarea>
-            <button id="savePurchaseBtn">Simpan Rencana</button>
-        </div>
-        
-        <div class="note-section">
-            <h3>Catatan Keuangan</h3>
-            <textarea id="financeNotes" class="note-box" placeholder="Tulis catatan keuangan Anda di sini"></textarea>
-            <button id="saveNotesBtn">Simpan Catatan</button>
-        </div>
-        
-        <div id="savedNotes" style="margin-top: 20px;"></div>
     </div>
 
     <script>
-        // Inisialisasi database
-        let db;
-        const DB_NAME = "FinanceDB";
-        const DB_VERSION = 1;
-        const STORE_NAME = "transactions";
-        const ANALYSIS_STORE = "analysis";
-        const NOTES_STORE = "notes";
-
-        // Inisialisasi aplikasi saat halaman dimuat
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeDatabase();
-            setupEventListeners();
-        });
-
-        // Buka database
-        function initializeDatabase() {
-            const request = indexedDB.open(DB_NAME, DB_VERSION);
-            
-            request.onerror = function(event) {
-                console.error("Database error: ", event.target.error);
-                alert("Gagal membuka database: " + event.target.error.message);
-            };
-            
-            request.onupgradeneeded = function(event) {
-                const db = event.target.result;
-                
-                // Buat object store untuk transaksi
-                if (!db.objectStoreNames.contains(STORE_NAME)) {
-                    const transactionStore = db.createObjectStore(STORE_NAME, { keyPath: "id", autoIncrement: true });
-                    transactionStore.createIndex("date", "date", { unique: false });
-                    transactionStore.createIndex("type", "type", { unique: false });
-                }
-                
-                // Buat object store untuk analisis
-                if (!db.objectStoreNames.contains(ANALYSIS_STORE)) {
-                    db.createObjectStore(ANALYSIS_STORE, { keyPath: "id" });
-                }
-                
-                // Buat object store untuk catatan
-                if (!db.objectStoreNames.contains(NOTES_STORE)) {
-                    db.createObjectStore(NOTES_STORE, { keyPath: "id" });
-                }
-            };
-            
-            request.onsuccess = function(event) {
-                db = event.target.result;
-                loadTransactions();
-                loadAnalysis();
-                loadNotes();
-                updateReports();
-            };
+        // Inisialisasi database sederhana dengan localStorage
+        const DB_NAME = "FinanceAppData";
+        
+        // Fungsi untuk menyimpan data
+        function saveData(data) {
+            localStorage.setItem(DB_NAME, JSON.stringify(data));
         }
-
-        // Setup event listeners untuk semua tombol
-        function setupEventListeners() {
-            // Tombol input
-            document.getElementById('addIncomeBtn').addEventListener('click', addIncome);
-            document.getElementById('addExpenseBtn').addEventListener('click', addExpense);
-            
-            // Tombol laporan
-            document.getElementById('copyWeeklyBtn').addEventListener('click', copyWeeklyReport);
-            document.getElementById('copyMonthlyBtn').addEventListener('click', copyMonthlyReport);
-            
-            // Tombol analisis
-            document.getElementById('saveAnalysisBtn').addEventListener('click', saveAnalysis);
-            
-            // Tombol backup/restore
-            document.getElementById('exportDataBtn').addEventListener('click', exportData);
-            document.getElementById('importDataBtn').addEventListener('click', importData);
-            
-            // Tombol catatan
-            document.getElementById('savePurchaseBtn').addEventListener('click', savePurchasePlan);
-            document.getElementById('saveNotesBtn').addEventListener('click', saveFinanceNotes);
+        
+        // Fungsi untuk memuat data
+        function loadData() {
+            const data = localStorage.getItem(DB_NAME);
+            return data ? JSON.parse(data) : { transactions: [] };
         }
-
-        // Fungsi untuk menambahkan pemasukan
-        function addIncome() {
-            try {
-                const input = document.getElementById("incomeInput").value.trim();
-                const errorEl = document.getElementById("incomeError");
-                errorEl.textContent = "";
-                
-                if (!input) {
-                    errorEl.textContent = "Masukkan data pemasukan";
-                    return;
-                }
-                
-                const lines = input.split("\n");
-                const transactions = [];
-                
-                for (const line of lines) {
-                    if (!line.trim()) continue;
-                    
-                    const parts = line.split(",");
-                    if (parts.length < 2) {
-                        errorEl.textContent = "Format salah: Gunakan 'Kategori,Jumlah'";
-                        return;
-                    }
-                    
-                    const category = parts[0].trim();
-                    const amount = parseFloat(parts[1].trim());
-                    
-                    if (!category) {
-                        errorEl.textContent = "Kategori tidak boleh kosong";
-                        return;
-                    }
-                    
-                    if (isNaN(amount) {
-                        errorEl.textContent = "Jumlah harus angka";
-                        return;
-                    }
-                    
-                    if (amount <= 0) {
-                        errorEl.textContent = "Jumlah harus lebih dari 0";
-                        return;
-                    }
-                    
-                    transactions.push({
-                        date: new Date(),
-                        type: "income",
-                        category: category,
-                        amount: amount
-                    });
-                }
-                
-                if (transactions.length > 0) {
-                    addTransactions(transactions);
-                    document.getElementById("incomeInput").value = "";
-                }
-            } catch (error) {
-                console.error("Error in addIncome:", error);
-                document.getElementById("incomeError").textContent = "Terjadi kesalahan: " + error.message;
-            }
+        
+        // Fungsi untuk menambahkan transaksi
+        function addTransaction(transaction) {
+            const data = loadData();
+            transaction.id = Date.now();
+            transaction.date = new Date().toISOString();
+            data.transactions.push(transaction);
+            saveData(data);
+            return transaction;
         }
-
-        // Fungsi untuk menambahkan pengeluaran
-        function addExpense() {
-            try {
-                const input = document.getElementById("expenseInput").value.trim();
-                const errorEl = document.getElementById("expenseError");
-                errorEl.textContent = "";
-                
-                if (!input) {
-                    errorEl.textContent = "Masukkan data pengeluaran";
-                    return;
-                }
-                
-                const lines = input.split("\n");
-                const transactions = [];
-                
-                for (const line of lines) {
-                    if (!line.trim()) continue;
-                    
-                    const parts = line.split(",");
-                    if (parts.length < 2) {
-                        errorEl.textContent = "Format salah: Gunakan 'Kategori,Jumlah'";
-                        return;
-                    }
-                    
-                    const category = parts[0].trim();
-                    const amount = parseFloat(parts[1].trim());
-                    
-                    if (!category) {
-                        errorEl.textContent = "Kategori tidak boleh kosong";
-                        return;
-                    }
-                    
-                    if (isNaN(amount)) {
-                        errorEl.textContent = "Jumlah harus angka";
-                        return;
-                    }
-                    
-                    if (amount <= 0) {
-                        errorEl.textContent = "Jumlah harus lebih dari 0";
-                        return;
-                    }
-                    
-                    transactions.push({
-                        date: new Date(),
-                        type: "expense",
-                        category: category,
-                        amount: amount
-                    });
-                }
-                
-                if (transactions.length > 0) {
-                    addTransactions(transactions);
-                    document.getElementById("expenseInput").value = "";
-                }
-            } catch (error) {
-                console.error("Error in addExpense:", error);
-                document.getElementById("expenseError").textContent = "Terjadi kesalahan: " + error.message;
-            }
-        }
-
-        // Fungsi untuk menambahkan transaksi ke database
-        function addTransactions(transactions) {
-            try {
-                if (!db) {
-                    throw new Error("Database belum diinisialisasi");
-                }
-                
-                const transaction = db.transaction([STORE_NAME], "readwrite");
-                const store = transaction.objectStore(STORE_NAME);
-                
-                for (const trans of transactions) {
-                    store.add(trans);
-                }
-                
-                transaction.oncomplete = function() {
-                    loadTransactions();
-                    updateReports();
-                };
-                
-                transaction.onerror = function(event) {
-                    console.error("Error adding transaction: ", event.target.error);
-                    alert("Gagal menambahkan transaksi: " + event.target.error.message);
-                };
-            } catch (error) {
-                console.error("Error in addTransactions:", error);
-                alert("Terjadi kesalahan: " + error.message);
-            }
-        }
-
-        // Fungsi untuk memuat transaksi dari database
-        function loadTransactions() {
-            try {
-                if (!db) return;
-                
-                const transaction = db.transaction([STORE_NAME], "readonly");
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.getAll();
-                
-                request.onsuccess = function(event) {
-                    displayTransactions(event.target.result);
-                };
-                
-                request.onerror = function(event) {
-                    console.error("Error loading transactions: ", event.target.error);
-                };
-            } catch (error) {
-                console.error("Error in loadTransactions:", error);
-            }
-        }
-
-        // Fungsi untuk menampilkan transaksi di tabel
-        function displayTransactions(transactions) {
-            try {
-                const tbody = document.getElementById("transactionBody");
-                if (!tbody) return;
-                
-                tbody.innerHTML = "";
-                
-                // Urutkan berdasarkan tanggal (terbaru pertama)
-                transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-                
-                for (const trans of transactions) {
-                    const row = document.createElement("tr");
-                    
-                    const dateCell = document.createElement("td");
-                    dateCell.textContent = new Date(trans.date).toLocaleDateString();
-                    
-                    const typeCell = document.createElement("td");
-                    typeCell.textContent = trans.type === "income" ? "Pemasukan" : "Pengeluaran";
-                    typeCell.style.color = trans.type === "income" ? "green" : "red";
-                    
-                    const categoryCell = document.createElement("td");
-                    categoryCell.textContent = trans.category;
-                    
-                    const amountCell = document.createElement("td");
-                    amountCell.textContent = formatCurrency(trans.amount);
-                    
-                    const actionCell = document.createElement("td");
-                    const deleteButton = document.createElement("button");
-                    deleteButton.textContent = "Hapus";
-                    deleteButton.addEventListener('click', function() {
-                        deleteTransaction(trans.id);
-                    });
-                    actionCell.appendChild(deleteButton);
-                    
-                    row.appendChild(dateCell);
-                    row.appendChild(typeCell);
-                    row.appendChild(categoryCell);
-                    row.appendChild(amountCell);
-                    row.appendChild(actionCell);
-                    
-                    tbody.appendChild(row);
-                }
-            } catch (error) {
-                console.error("Error in displayTransactions:", error);
-            }
-        }
-
+        
         // Fungsi untuk menghapus transaksi
         function deleteTransaction(id) {
-            try {
-                if (!db) return;
-                
-                const transaction = db.transaction([STORE_NAME], "readwrite");
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.delete(id);
-                
-                request.onsuccess = function() {
-                    loadTransactions();
-                    updateReports();
-                };
-                
-                request.onerror = function(event) {
-                    console.error("Error deleting transaction: ", event.target.error);
-                    alert("Gagal menghapus transaksi");
-                };
-            } catch (error) {
-                console.error("Error in deleteTransaction:", error);
-            }
+            const data = loadData();
+            data.transactions = data.transactions.filter(t => t.id !== id);
+            saveData(data);
         }
-
+        
+        // Fungsi untuk memformat mata uang
+        function formatCurrency(amount) {
+            return "Rp" + amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+        
+        // Fungsi untuk menampilkan transaksi
+        function displayTransactions() {
+            const data = loadData();
+            const tbody = document.getElementById("transactionBody");
+            tbody.innerHTML = "";
+            
+            data.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            data.transactions.forEach(trans => {
+                const row = document.createElement("tr");
+                
+                row.innerHTML = `
+                    <td>${new Date(trans.date).toLocaleDateString()}</td>
+                    <td style="color: ${trans.type === 'income' ? 'green' : 'red'}">
+                        ${trans.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}
+                    </td>
+                    <td>${trans.category}</td>
+                    <td>${formatCurrency(trans.amount)}</td>
+                    <td><button onclick="deleteTransaction(${trans.id})" style="background:#e74c3c;">Hapus</button></td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            updateReports();
+        }
+        
         // Fungsi untuk memperbarui laporan
         function updateReports() {
-            try {
-                if (!db) return;
-                
-                const transaction = db.transaction([STORE_NAME], "readonly");
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.getAll();
-                
-                request.onsuccess = function(event) {
-                    const transactions = event.target.result;
-                    generateReports(transactions);
-                };
-                
-                request.onerror = function(event) {
-                    console.error("Error loading transactions for reports: ", event.target.error);
-                };
-            } catch (error) {
-                console.error("Error in updateReports:", error);
-            }
+            const data = loadData();
+            const transactions = data.transactions;
+            
+            // Hitung saldo
+            let balance = 0;
+            transactions.forEach(t => {
+                balance += t.type === 'income' ? t.amount : -t.amount;
+            });
+            document.getElementById("currentBalance").textContent = formatCurrency(balance);
+            
+            // Hitung rata-rata
+            const incomes = transactions.filter(t => t.type === 'income').map(t => t.amount);
+            const expenses = transactions.filter(t => t.type === 'expense').map(t => t.amount);
+            
+            const avgIncome = incomes.length ? (incomes.reduce((a, b) => a + b, 0) / incomes.length) : 0;
+            const avgExpense = expenses.length ? (expenses.reduce((a, b) => a + b, 0) / expenses.length) : 0;
+            
+            document.getElementById("avgIncome").textContent = formatCurrency(avgIncome);
+            document.getElementById("avgExpense").textContent = formatCurrency(avgExpense);
+            
+            // Generate laporan mingguan
+            generateWeeklyReport();
+            
+            // Generate laporan bulanan
+            generateMonthlyReport();
+            
+            // Generate prediksi
+            generatePredictions(balance, avgIncome, avgExpense);
         }
-
-        // Fungsi untuk menghasilkan berbagai laporan
-        function generateReports(transactions) {
-            try {
-                // Hitung saldo saat ini
-                let balance = 0;
-                for (const trans of transactions) {
-                    if (trans.type === "income") {
-                        balance += trans.amount;
-                    } else {
-                        balance -= trans.amount;
-                    }
-                }
-                
-                const currentBalanceEl = document.getElementById("currentBalance");
-                if (currentBalanceEl) {
-                    currentBalanceEl.textContent = formatCurrency(balance);
-                }
-                
-                // Kelompokkan transaksi per minggu
-                const weeklyData = groupByWeek(transactions);
-                generateWeeklyReport(weeklyData);
-                
-                // Kelompokkan transaksi per bulan
-                const monthlyData = groupByMonth(transactions);
-                generateMonthlyReport(monthlyData);
-                
-                // Analisis kategori
-                generateCategoryReport(transactions);
-                
-                // Analisis statistik
-                generateAnalysis(transactions, balance);
-            } catch (error) {
-                console.error("Error in generateReports:", error);
-            }
-        }
-
-        // Fungsi untuk mengelompokkan transaksi per minggu
-        function groupByWeek(transactions) {
+        
+        // Fungsi untuk menghasilkan laporan mingguan
+        function generateWeeklyReport() {
+            const data = loadData();
+            const transactions = data.transactions;
+            
             const weeks = {};
             
-            for (const trans of transactions) {
+            transactions.forEach(trans => {
                 const date = new Date(trans.date);
                 const year = date.getFullYear();
                 const weekNum = getWeekNumber(date);
-                const weekKey = `${year}-W${weekNum}`;
+                const weekKey = `Minggu ${weekNum}, ${year}`;
                 
                 if (!weeks[weekKey]) {
-                    weeks[weekKey] = {
-                        income: 0,
-                        expense: 0,
-                        transactions: []
-                    };
+                    weeks[weekKey] = { income: 0, expense: 0 };
                 }
                 
-                weeks[weekKey].transactions.push(trans);
-                
-                if (trans.type === "income") {
+                if (trans.type === 'income') {
                     weeks[weekKey].income += trans.amount;
                 } else {
                     weeks[weekKey].expense += trans.amount;
                 }
-            }
+            });
             
-            return weeks;
+            let html = '<table><tr><th>Minggu</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo</th></tr>';
+            
+            Object.keys(weeks).sort().forEach(week => {
+                const balance = weeks[week].income - weeks[week].expense;
+                html += `
+                    <tr>
+                        <td>${week}</td>
+                        <td style="color:green">${formatCurrency(weeks[week].income)}</td>
+                        <td style="color:red">${formatCurrency(weeks[week].expense)}</td>
+                        <td>${formatCurrency(balance)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table>';
+            document.getElementById("weeklyReport").innerHTML = html;
         }
-
-        // Fungsi untuk mengelompokkan transaksi per bulan
-        function groupByMonth(transactions) {
+        
+        // Fungsi untuk menghasilkan laporan bulanan
+        function generateMonthlyReport() {
+            const data = loadData();
+            const transactions = data.transactions;
+            
             const months = {};
             
-            for (const trans of transactions) {
+            transactions.forEach(trans => {
                 const date = new Date(trans.date);
-                const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+                const monthKey = date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
                 
                 if (!months[monthKey]) {
-                    months[monthKey] = {
-                        income: 0,
-                        expense: 0,
-                        transactions: []
-                    };
+                    months[monthKey] = { income: 0, expense: 0 };
                 }
                 
-                months[monthKey].transactions.push(trans);
-                
-                if (trans.type === "income") {
+                if (trans.type === 'income') {
                     months[monthKey].income += trans.amount;
                 } else {
                     months[monthKey].expense += trans.amount;
                 }
+            });
+            
+            let html = '<table><tr><th>Bulan</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo</th></tr>';
+            
+            Object.keys(months).sort().forEach(month => {
+                const balance = months[month].income - months[month].expense;
+                html += `
+                    <tr>
+                        <td>${month}</td>
+                        <td style="color:green">${formatCurrency(months[month].income)}</td>
+                        <td style="color:red">${formatCurrency(months[month].expense)}</td>
+                        <td>${formatCurrency(balance)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table>';
+            document.getElementById("monthlyReport").innerHTML = html;
+        }
+        
+        // Fungsi untuk menghasilkan prediksi
+        function generatePredictions(balance, avgIncome, avgExpense) {
+            const netMonthly = avgIncome - avgExpense;
+            let growthHtml = '';
+            let bankruptcyHtml = '';
+            
+            if (netMonthly > 0) {
+                growthHtml = `
+                    <p>Proyeksi keuangan positif (+${formatCurrency(netMonthly)}/bulan):</p>
+                    <ul>
+                        <li>3 bulan: ${formatCurrency(balance + (netMonthly * 3))}</li>
+                        <li>6 bulan: ${formatCurrency(balance + (netMonthly * 6))}</li>
+                        <li>1 tahun: ${formatCurrency(balance + (netMonthly * 12))}</li>
+                    </ul>
+                `;
+            } else {
+                growthHtml = `
+                    <p style="color:red">Peringatan: Defisit ${formatCurrency(-netMonthly)} per bulan</p>
+                    <p>Perlu pengurangan pengeluaran atau penambahan pemasukan.</p>
+                `;
             }
             
-            return months;
-        }
-
-        // Fungsi untuk menghasilkan laporan mingguan
-        function generateWeeklyReport(weeklyData) {
-            try {
-                const weeklyReport = document.getElementById("weeklyReport");
-                if (!weeklyReport) return;
-                
-                let html = "<table><tr><th>Minggu</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo</th></tr>";
-                
-                const weekKeys = Object.keys(weeklyData).sort();
-                for (const weekKey of weekKeys) {
-                    const weekData = weeklyData[weekKey];
-                    const balance = weekData.income - weekData.expense;
-                    
-                    html += `<tr>
-                        <td>${weekKey}</td>
-                        <td style="color: green">${formatCurrency(weekData.income)}</td>
-                        <td style="color: red">${formatCurrency(weekData.expense)}</td>
-                        <td>${formatCurrency(balance)}</td>
-                    </tr>`;
+            if (balance <= 0) {
+                bankruptcyHtml = `
+                    <p style="color:red;font-weight:bold">PERINGATAN: Saldo negatif (${formatCurrency(balance)})</p>
+                    <p>Anda tidak memiliki tabungan untuk keadaan darurat.</p>
+                `;
+            } else if (avgExpense > 0) {
+                const monthsCoverage = Math.round(balance / avgExpense);
+                if (monthsCoverage < 3) {
+                    bankruptcyHtml = `
+                        <p style="color:orange">Tabungan hanya cukup untuk ${monthsCoverage} bulan pengeluaran.</p>
+                        <p>Disarankan minimal 3-6 bulan pengeluaran.</p>
+                    `;
+                } else {
+                    bankruptcyHtml = `
+                        <p style="color:green">Tabungan cukup untuk ${monthsCoverage} bulan pengeluaran.</p>
+                        <p>Keuangan Anda dalam kondisi sehat.</p>
+                    `;
                 }
-                
-                html += "</table>";
-                weeklyReport.innerHTML = html;
-                
-                // Buat data untuk chart (hanya 8 minggu terakhir)
-                const recentWeeks = weekKeys.slice(-8);
-                const incomeData = recentWeeks.map(wk => weeklyData[wk].income);
-                const expenseData = recentWeeks.map(wk => weeklyData[wk].expense);
-                
-                // Render chart sederhana
-                renderTextChart("weeklyChart", recentWeeks, incomeData, expenseData);
-            } catch (error) {
-                console.error("Error in generateWeeklyReport:", error);
             }
+            
+            document.getElementById("growthPrediction").innerHTML = growthHtml;
+            document.getElementById("bankruptcyPrediction").innerHTML = bankruptcyHtml;
         }
-
-        // Fungsi untuk menghasilkan laporan bulanan
-        function generateMonthlyReport(monthlyData) {
-            try {
-                const monthlyReport = document.getElementById("monthlyReport");
-                if (!monthlyReport) return;
-                
-                let html = "<table><tr><th>Bulan</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo</th></tr>";
-                
-                const monthKeys = Object.keys(monthlyData).sort();
-                for (const monthKey of monthKeys) {
-                    const [year, month] = monthKey.split("-");
-                    const monthName = new Date(year, month - 1, 1).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-                    const monthData = monthlyData[monthKey];
-                    const balance = monthData.income - monthData.expense;
-                    
-                    html += `<tr>
-                        <td>${monthName}</td>
-                        <td style="color: green">${formatCurrency(monthData.income)}</td>
-                        <td style="color: red">${formatCurrency(monthData.expense)}</td>
-                        <td>${formatCurrency(balance)}</td>
-                    </tr>`;
-                }
-                
-                html += "</table>";
-                monthlyReport.innerHTML = html;
-                
-                // Buat data untuk chart (hanya 6 bulan terakhir)
-                const recentMonths = monthKeys.slice(-6);
-                const incomeData = recentMonths.map(m => monthlyData[m].income);
-                const expenseData = recentMonths.map(m => monthlyData[m].expense);
-                
-                // Render chart sederhana
-                renderTextChart("monthlyChart", recentMonths.map(m => {
-                    const [year, month] = m.split("-");
-                    return new Date(year, month - 1, 1).toLocaleDateString('id-ID', { month: 'short' });
-                }), incomeData, expenseData);
-            } catch (error) {
-                console.error("Error in generateMonthlyReport:", error);
-            }
-        }
-
-        // Fungsi untuk menghasilkan laporan kategori
-        function generateCategoryReport(transactions) {
-            try {
-                const categoryReport = document.getElementById("categoryReport");
-                if (!categoryReport) return;
-                
-                // Kelompokkan pemasukan berdasarkan kategori
-                const incomeCategories = {};
-                const expenseCategories = {};
-                
-                for (const trans of transactions) {
-                    if (trans.type === "income") {
-                        if (!incomeCategories[trans.category]) {
-                            incomeCategories[trans.category] = 0;
-                        }
-                        incomeCategories[trans.category] += trans.amount;
-                    } else {
-                        if (!expenseCategories[trans.category]) {
-                            expenseCategories[trans.category] = 0;
-                        }
-                        expenseCategories[trans.category] += trans.amount;
-                    }
-                }
-                
-                // Generate HTML untuk kategori pemasukan
-                let html = "<h3>Pemasukan per Kategori</h3><table><tr><th>Kategori</th><th>Jumlah</th></tr>";
-                for (const category in incomeCategories) {
-                    html += `<tr>
-                        <td>${category}</td>
-                        <td style="color: green">${formatCurrency(incomeCategories[category])}</td>
-                    </tr>`;
-                }
-                html += "</table>";
-                
-                // Generate HTML untuk kategori pengeluaran
-                html += "<h3>Pengeluaran per Kategori</h3><table><tr><th>Kategori</th><th>Jumlah</th></tr>";
-                for (const category in expenseCategories) {
-                    html += `<tr>
-                        <td>${category}</td>
-                        <td style="color: red">${formatCurrency(expenseCategories[category])}</td>
-                    </tr>`;
-                }
-                html += "</table>";
-                
-                categoryReport.innerHTML = html;
-                
-                // Render chart kategori pengeluaran (hanya yang memiliki nilai)
-                const expenseLabels = [];
-                const expenseValues = [];
-                for (const category in expenseCategories) {
-                    if (expenseCategories[category] > 0) {
-                        expenseLabels.push(category);
-                        expenseValues.push(expenseCategories[category]);
-                    }
-                }
-                
-                renderTextPieChart("categoryChart", expenseLabels, expenseValues);
-            } catch (error) {
-                console.error("Error in generateCategoryReport:", error);
-            }
-        }
-
-        // Fungsi untuk menghasilkan analisis statistik
-        function generateAnalysis(transactions, currentBalance) {
-            try {
-                // Hitung rata-rata pemasukan dan pengeluaran
-                const incomes = transactions.filter(t => t.type === "income").map(t => t.amount);
-                const expenses = transactions.filter(t => t.type === "expense").map(t => t.amount);
-                
-                const avgIncome = incomes.length > 0 ? incomes.reduce((a, b) => a + b, 0) / incomes.length : 0;
-                const avgExpense = expenses.length > 0 ? expenses.reduce((a, b) => a + b, 0) / expenses.length : 0;
-                
-                const avgIncomeEl = document.getElementById("avgIncome");
-                if (avgIncomeEl) {
-                    avgIncomeEl.textContent = formatCurrency(avgIncome);
-                }
-                
-                const avgExpenseEl = document.getElementById("avgExpense");
-                if (avgExpenseEl) {
-                    avgExpenseEl.textContent = formatCurrency(avgExpense);
-                }
-                
-                // Prediksi pertumbuhan
-                const growthPrediction = document.getElementById("growthPrediction");
-                if (growthPrediction) {
-                    const netPerMonth = avgIncome - avgExpense;
-                    
-                    if (netPerMonth > 0) {
-                        growthPrediction.innerHTML = `
-                            <p>Dengan rata-rata bersih ${formatCurrency(netPerMonth)} per bulan:</p>
-                            <ul>
-                                <li>Dalam 3 bulan: ${formatCurrency(currentBalance + (netPerMonth * 3))}</li>
-                                <li>Dalam 6 bulan: ${formatCurrency(currentBalance + (netPerMonth * 6))}</li>
-                                <li>Dalam 1 tahun: ${formatCurrency(currentBalance + (netPerMonth * 12))}</li>
-                            </ul>
-                            <p>Pertumbuhan positif terdeteksi. Pertahankan kebiasaan ini!</p>
-                        `;
-                    } else if (netPerMonth < 0) {
-                        growthPrediction.innerHTML = `
-                            <p>Dengan rata-rata defisit ${formatCurrency(-netPerMonth)} per bulan:</p>
-                            <ul>
-                                <li>Dalam 3 bulan: ${formatCurrency(Math.max(0, currentBalance + (netPerMonth * 3)))}</li>
-                                <li>Dalam 6 bulan: ${formatCurrency(Math.max(0, currentBalance + (netPerMonth * 6)))}</li>
-                                <li>Dalam 1 tahun: ${formatCurrency(Math.max(0, currentBalance + (netPerMonth * 12)))}</li>
-                            </ul>
-                            <p style="color: red">Peringatan: Anda mengalami defisit bulanan. Perlu penyesuaian pengeluaran.</p>
-                        `;
-                    } else {
-                        growthPrediction.innerHTML = "<p>Tidak ada pertumbuhan atau penurunan yang signifikan.</p>";
-                    }
-                }
-                
-                // Prediksi kebangkrutan
-                const bankruptcyPrediction = document.getElementById("bankruptcyPrediction");
-                if (bankruptcyPrediction) {
-                    if (currentBalance <= 0) {
-                        bankruptcyPrediction.innerHTML = `
-                            <p style="color: red; font-weight: bold">PERINGATAN: Saldo Anda saat ini ${formatCurrency(currentBalance)}</p>
-                            <p>Anda tidak memiliki tabungan yang cukup untuk menutupi pengeluaran darurat.</p>
-                        `;
-                    } else if (avgExpense > 0 && currentBalance / avgExpense < 3) {
-                        bankruptcyPrediction.innerHTML = `
-                            <p style="color: orange">Perhatian: Tabungan Anda hanya cukup untuk ${Math.round(currentBalance / avgExpense)} bulan pengeluaran.</p>
-                            <p>Disarankan untuk memiliki tabungan setidaknya 3-6 bulan pengeluaran.</p>
-                        `;
-                    } else {
-                        bankruptcyPrediction.innerHTML = `
-                            <p style="color: green">Bagus! Tabungan Anda cukup untuk ${Math.round(currentBalance / avgExpense)} bulan pengeluaran.</p>
-                            <p>Anda berada dalam kondisi keuangan yang sehat.</p>
-                        `;
-                    }
-                }
-            } catch (error) {
-                console.error("Error in generateAnalysis:", error);
-            }
-        }
-
-        // Fungsi untuk menampilkan chart berbasis teks (sederhana)
-        function renderTextChart(containerId, labels, incomeData, expenseData) {
-            try {
-                const container = document.getElementById(containerId);
-                if (!container) return;
-                
-                // Normalisasi data untuk chart
-                const maxValue = Math.max(...incomeData, ...expenseData);
-                const scale = maxValue > 0 ? 50 / maxValue : 1;
-                
-                let chart = "<pre>";
-                
-                // Buat bar untuk income
-                chart += "Pemasukan:\n";
-                for (let i = 0; i < incomeData.length; i++) {
-                    const barLength = Math.round(incomeData[i] * scale);
-                    chart += `${labels[i].padEnd(10)}: ${'█'.repeat(barLength)} ${formatCurrency(incomeData[i])}\n`;
-                }
-                
-                // Buat bar untuk expense
-                chart += "\nPengeluaran:\n";
-                for (let i = 0; i < expenseData.length; i++) {
-                    const barLength = Math.round(expenseData[i] * scale);
-                    chart += `${labels[i].padEnd(10)}: ${'█'.repeat(barLength)} ${formatCurrency(expenseData[i])}\n`;
-                }
-                
-                chart += "</pre>";
-                container.innerHTML = chart;
-            } catch (error) {
-                console.error("Error in renderTextChart:", error);
-            }
-        }
-
-        // Fungsi untuk menampilkan pie chart berbasis teks (sederhana)
-        function renderTextPieChart(containerId, labels, values) {
-            try {
-                const container = document.getElementById(containerId);
-                if (!container) return;
-                
-                const total = values.reduce((a, b) => a + b, 0);
-                if (total <= 0) {
-                    container.innerHTML = "<p>Tidak ada data pengeluaran untuk ditampilkan.</p>";
-                    return;
-                }
-                
-                // Urutkan dari yang terbesar
-                const combined = labels.map((label, i) => ({ label, value: values[i] }));
-                combined.sort((a, b) => b.value - a.value);
-                
-                let chart = "<pre>Pengeluaran per Kategori:\n";
-                for (const item of combined) {
-                    const percentage = Math.round((item.value / total) * 100);
-                    chart += `${item.label.padEnd(20)}: ${'■'.repeat(Math.max(1, Math.round(percentage / 5)))} ${percentage}%\n`;
-                }
-                
-                chart += `\nTotal Pengeluaran: ${formatCurrency(total)}</pre>`;
-                container.innerHTML = chart;
-            } catch (error) {
-                console.error("Error in renderTextPieChart:", error);
-            }
-        }
-
-        // Fungsi untuk menyalin laporan mingguan
-        function copyWeeklyReport() {
-            try {
-                const weeklyReport = document.getElementById("weeklyReport");
-                if (!weeklyReport) return;
-                
-                const reportText = weeklyReport.textContent;
-                copyToClipboard(reportText);
-                alert("Laporan mingguan telah disalin ke clipboard!");
-            } catch (error) {
-                console.error("Error in copyWeeklyReport:", error);
-                alert("Gagal menyalin laporan mingguan");
-            }
-        }
-
-        // Fungsi untuk menyalin laporan bulanan
-        function copyMonthlyReport() {
-            try {
-                const monthlyReport = document.getElementById("monthlyReport");
-                if (!monthlyReport) return;
-                
-                const reportText = monthlyReport.textContent;
-                copyToClipboard(reportText);
-                alert("Laporan bulanan telah disalin ke clipboard!");
-            } catch (error) {
-                console.error("Error in copyMonthlyReport:", error);
-                alert("Gagal menyalin laporan bulanan");
-            }
-        }
-
-        // Fungsi untuk menyalin teks ke clipboard
-        function copyToClipboard(text) {
-            try {
-                const textarea = document.createElement("textarea");
-                textarea.value = text;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand("copy");
-                document.body.removeChild(textarea);
-            } catch (error) {
-                console.error("Error in copyToClipboard:", error);
-                throw error;
-            }
-        }
-
-        // Fungsi untuk export data ke JSON
-        function exportData() {
-            try {
-                if (!db) {
-                    throw new Error("Database belum diinisialisasi");
-                }
-                
-                const transaction = db.transaction([STORE_NAME, ANALYSIS_STORE, NOTES_STORE], "readonly");
-                
-                const transactions = transaction.objectStore(STORE_NAME).getAll();
-                const analysis = transaction.objectStore(ANALYSIS_STORE).getAll();
-                const notes = transaction.objectStore(NOTES_STORE).getAll();
-                
-                Promise.all([transactions, analysis, notes].map(
-                    req => new Promise(resolve => {
-                        req.onsuccess = () => resolve(req.result);
-                    })
-                ).then(results => {
-                    const exportObj = {
-                        transactions: results[0],
-                        analysis: results[1],
-                        notes: results[2],
-                        timestamp: new Date()
-                    };
-                    
-                    const exportStr = JSON.stringify(exportObj, null, 2);
-                    const exportDataArea = document.getElementById("exportDataArea");
-                    if (exportDataArea) {
-                        exportDataArea.value = exportStr;
-                    }
-                }).catch(error => {
-                    console.error("Export error:", error);
-                    alert("Gagal mengekspor data: " + error.message);
-                });
-            } catch (error) {
-                console.error("Error in exportData:", error);
-                alert("Terjadi kesalahan saat mengekspor data: " + error.message);
-            }
-        }
-
-        // Fungsi untuk import data dari JSON
-        function importData() {
-            try {
-                const importStr = document.getElementById("importDataArea").value.trim();
-                const errorEl = document.getElementById("importError");
-                errorEl.textContent = "";
-                
-                if (!importStr) {
-                    errorEl.textContent = "Masukkan data JSON yang valid";
-                    return;
-                }
-                
-                const importObj = JSON.parse(importStr);
-                
-                if (!importObj.transactions || !Array.isArray(importObj.transactions)) {
-                    throw new Error("Format data tidak valid - transaksi tidak ditemukan");
-                }
-                
-                if (!db) {
-                    throw new Error("Database belum diinisialisasi");
-                }
-                
-                const transaction = db.transaction([STORE_NAME, ANALYSIS_STORE, NOTES_STORE], "readwrite");
-                
-                // Hapus data lama
-                transaction.objectStore(STORE_NAME).clear();
-                transaction.objectStore(ANALYSIS_STORE).clear();
-                transaction.objectStore(NOTES_STORE).clear();
-                
-                // Tambahkan data baru
-                for (const trans of importObj.transactions) {
-                    transaction.objectStore(STORE_NAME).add(trans);
-                }
-                
-                if (importObj.analysis && Array.isArray(importObj.analysis)) {
-                    for (const analysis of importObj.analysis) {
-                        transaction.objectStore(ANALYSIS_STORE).add(analysis);
-                    }
-                }
-                
-                if (importObj.notes && Array.isArray(importObj.notes)) {
-                    for (const note of importObj.notes) {
-                        transaction.objectStore(NOTES_STORE).add(note);
-                    }
-                }
-                
-                transaction.oncomplete = function() {
-                    alert("Data berhasil diimpor!");
-                    loadTransactions();
-                    loadAnalysis();
-                    loadNotes();
-                    updateReports();
-                    document.getElementById("importDataArea").value = "";
-                };
-                
-                transaction.onerror = function(event) {
-                    console.error("Import error: ", event.target.error);
-                    errorEl.textContent = "Gagal mengimpor data: " + event.target.error.message;
-                };
-            } catch (e) {
-                console.error("Import error: ", e);
-                document.getElementById("importError").textContent = "Format data tidak valid: " + e.message;
-            }
-        }
-
-        // Fungsi untuk menyimpan analisis ChatGPT
-        function saveAnalysis() {
-            try {
-                const analysisText = document.getElementById("chatgptInput").value.trim();
-                const errorEl = document.getElementById("analysisError");
-                errorEl.textContent = "";
-                
-                if (!analysisText) {
-                    errorEl.textContent = "Masukkan analisis terlebih dahulu";
-                    return;
-                }
-                
-                if (!db) {
-                    throw new Error("Database belum diinisialisasi");
-                }
-                
-                const analysis = {
-                    id: "chatgpt_analysis",
-                    text: analysisText,
-                    date: new Date()
-                };
-                
-                const transaction = db.transaction([ANALYSIS_STORE], "readwrite");
-                const store = transaction.objectStore(ANALYSIS_STORE);
-                
-                // Hapus yang lama jika ada
-                store.delete("chatgpt_analysis");
-                
-                // Tambahkan yang baru
-                store.add(analysis);
-                
-                transaction.oncomplete = function() {
-                    loadAnalysis();
-                    document.getElementById("chatgptInput").value = "";
-                    alert("Analisis berhasil disimpan!");
-                };
-                
-                transaction.onerror = function(event) {
-                    console.error("Error saving analysis: ", event.target.error);
-                    errorEl.textContent = "Gagal menyimpan analisis: " + event.target.error.message;
-                };
-            } catch (error) {
-                console.error("Error in saveAnalysis:", error);
-                document.getElementById("analysisError").textContent = "Terjadi kesalahan: " + error.message;
-            }
-        }
-
-        // Fungsi untuk memuat analisis yang disimpan
-        function loadAnalysis() {
-            try {
-                if (!db) return;
-                
-                const transaction = db.transaction([ANALYSIS_STORE], "readonly");
-                const store = transaction.objectStore(ANALYSIS_STORE);
-                const request = store.get("chatgpt_analysis");
-                
-                request.onsuccess = function(event) {
-                    const analysis = event.target.result;
-                    const savedAnalysis = document.getElementById("savedAnalysis");
-                    if (!savedAnalysis) return;
-                    
-                    if (analysis) {
-                        savedAnalysis.innerHTML = `
-                            <h3>Analisis yang Disimpan (${new Date(analysis.date).toLocaleDateString()}):</h3>
-                            <div style="border: 1px solid #ddd; padding: 10px; margin-top: 10px; white-space: pre-wrap;">${analysis.text}</div>
-                        `;
-                    } else {
-                        savedAnalysis.innerHTML = "<p>Tidak ada analisis yang disimpan.</p>";
-                    }
-                };
-                
-                request.onerror = function(event) {
-                    console.error("Error loading analysis: ", event.target.error);
-                };
-            } catch (error) {
-                console.error("Error in loadAnalysis:", error);
-            }
-        }
-
-        // Fungsi untuk menyimpan rencana pembelian
-        function savePurchasePlan() {
-            try {
-                const planText = document.getElementById("purchasePlan").value.trim();
-                
-                const note = {
-                    id: "purchase_plan",
-                    text: planText,
-                    date: new Date()
-                };
-                
-                saveNote(note);
-            } catch (error) {
-                console.error("Error in savePurchasePlan:", error);
-                alert("Gagal menyimpan rencana pembelian: " + error.message);
-            }
-        }
-
-        // Fungsi untuk menyimpan catatan keuangan
-        function saveFinanceNotes() {
-            try {
-                const notesText = document.getElementById("financeNotes").value.trim();
-                
-                const note = {
-                    id: "finance_notes",
-                    text: notesText,
-                    date: new Date()
-                };
-                
-                saveNote(note);
-            } catch (error) {
-                console.error("Error in saveFinanceNotes:", error);
-                alert("Gagal menyimpan catatan keuangan: " + error.message);
-            }
-        }
-
-        // Fungsi umum untuk menyimpan catatan
-        function saveNote(note) {
-            try {
-                if (!db) {
-                    throw new Error("Database belum diinisialisasi");
-                }
-                
-                const transaction = db.transaction([NOTES_STORE], "readwrite");
-                const store = transaction.objectStore(NOTES_STORE);
-                
-                // Hapus yang lama jika ada
-                store.delete(note.id);
-                
-                // Tambahkan yang baru
-                store.add(note);
-                
-                transaction.oncomplete = function() {
-                    loadNotes();
-                    alert("Catatan berhasil disimpan!");
-                };
-                
-                transaction.onerror = function(event) {
-                    console.error("Error saving note: ", event.target.error);
-                    alert("Gagal menyimpan catatan: " + event.target.error.message);
-                };
-            } catch (error) {
-                console.error("Error in saveNote:", error);
-                throw error;
-            }
-        }
-
-        // Fungsi untuk memuat catatan yang disimpan
-        function loadNotes() {
-            try {
-                if (!db) return;
-                
-                const transaction = db.transaction([NOTES_STORE], "readonly");
-                const store = transaction.objectStore(NOTES_STORE);
-                const request = store.getAll();
-                
-                request.onsuccess = function(event) {
-                    const notes = event.target.result;
-                    const notesContainer = document.getElementById("savedNotes");
-                    if (!notesContainer) return;
-                    
-                    notesContainer.innerHTML = "";
-                    
-                    for (const note of notes) {
-                        const noteDiv = document.createElement("div");
-                        noteDiv.style.border = "1px solid #ddd";
-                        noteDiv.style.padding = "10px";
-                        noteDiv.style.marginBottom = "10px";
-                        
-                        let title = "";
-                        if (note.id === "purchase_plan") {
-                            title = "Rencana Pembelian";
-                            document.getElementById("purchasePlan").value = note.text || "";
-                        } else if (note.id === "finance_notes") {
-                            title = "Catatan Keuangan";
-                            document.getElementById("financeNotes").value = note.text || "";
-                        } else {
-                            title = "Catatan";
-                        }
-                        
-                        noteDiv.innerHTML = `
-                            <h3>${title} (${new Date(note.date).toLocaleDateString()}):</h3>
-                            <div style="white-space: pre-wrap;">${note.text}</div>
-                        `;
-                        
-                        notesContainer.appendChild(noteDiv);
-                    }
-                };
-                
-                request.onerror = function(event) {
-                    console.error("Error loading notes: ", event.target.error);
-                };
-            } catch (error) {
-                console.error("Error in loadNotes:", error);
-            }
-        }
-
+        
         // Fungsi bantu untuk mendapatkan nomor minggu
         function getWeekNumber(date) {
             const d = new Date(date);
@@ -1383,32 +445,126 @@
             const week1 = new Date(d.getFullYear(), 0, 4);
             return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
         }
-
-        // Fungsi bantu untuk memformat mata uang
-        function formatCurrency(amount) {
-            return "Rp" + amount.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        }
-
-        // Fungsi untuk toggle dropdown laporan
-        function toggleReport(header) {
-            header.parentElement.classList.toggle("active");
-        }
-
-        // Fungsi untuk mengubah tab
-        function openTab(evt, tabName) {
-            const tabcontent = document.getElementsByClassName("tabcontent");
-            for (let i = 0; i < tabcontent.length; i++) {
-                tabcontent[i].style.display = "none";
+        
+        // Event listeners untuk tombol
+        document.getElementById("addIncomeBtn").addEventListener("click", function() {
+            const input = document.getElementById("incomeInput").value.trim();
+            const errorEl = document.getElementById("incomeError");
+            errorEl.textContent = "";
+            
+            if (!input) {
+                errorEl.textContent = "Masukkan data pemasukan";
+                return;
             }
             
-            const tablinks = document.getElementsByClassName("tablinks");
-            for (let i = 0; i < tablinks.length; i++) {
-                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            const lines = input.split("\n");
+            let hasError = false;
+            
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                
+                const parts = line.split(",");
+                if (parts.length < 2) {
+                    errorEl.textContent = "Format salah: Gunakan 'Kategori,Jumlah'";
+                    hasError = true;
+                    return;
+                }
+                
+                const category = parts[0].trim();
+                const amount = parseFloat(parts[1].trim());
+                
+                if (!category || isNaN(amount) || amount <= 0) {
+                    errorEl.textContent = "Kategori tidak boleh kosong dan jumlah harus angka positif";
+                    hasError = true;
+                    return;
+                }
+                
+                if (!hasError) {
+                    addTransaction({
+                        type: "income",
+                        category: category,
+                        amount: amount
+                    });
+                }
+            });
+            
+            if (!hasError) {
+                document.getElementById("incomeInput").value = "";
+                displayTransactions();
+            }
+        });
+        
+        document.getElementById("addExpenseBtn").addEventListener("click", function() {
+            const input = document.getElementById("expenseInput").value.trim();
+            const errorEl = document.getElementById("expenseError");
+            errorEl.textContent = "";
+            
+            if (!input) {
+                errorEl.textContent = "Masukkan data pengeluaran";
+                return;
             }
             
-            document.getElementById(tabName).style.display = "block";
-            evt.currentTarget.className += " active";
-        }
+            const lines = input.split("\n");
+            let hasError = false;
+            
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                
+                const parts = line.split(",");
+                if (parts.length < 2) {
+                    errorEl.textContent = "Format salah: Gunakan 'Kategori,Jumlah'";
+                    hasError = true;
+                    return;
+                }
+                
+                const category = parts[0].trim();
+                const amount = parseFloat(parts[1].trim());
+                
+                if (!category || isNaN(amount) || amount <= 0) {
+                    errorEl.textContent = "Kategori tidak boleh kosong dan jumlah harus angka positif";
+                    hasError = true;
+                    return;
+                }
+                
+                if (!hasError) {
+                    addTransaction({
+                        type: "expense",
+                        category: category,
+                        amount: amount
+                    });
+                }
+            });
+            
+            if (!hasError) {
+                document.getElementById("expenseInput").value = "";
+                displayTransactions();
+            }
+        });
+        
+        // Fungsi untuk menyalin laporan
+        document.getElementById("copyWeeklyBtn").addEventListener("click", function() {
+            const reportText = document.getElementById("weeklyReport").textContent;
+            navigator.clipboard.writeText(reportText)
+                .then(() => alert("Laporan mingguan disalin!"))
+                .catch(err => console.error("Gagal menyalin:", err));
+        });
+        
+        document.getElementById("copyMonthlyBtn").addEventListener("click", function() {
+            const reportText = document.getElementById("monthlyReport").textContent;
+            navigator.clipboard.writeText(reportText)
+                .then(() => alert("Laporan bulanan disalin!"))
+                .catch(err => console.error("Gagal menyalin:", err));
+        });
+        
+        // Toggle laporan
+        document.querySelectorAll(".report-header").forEach(header => {
+            header.addEventListener("click", function() {
+                this.parentElement.classList.toggle("active");
+            });
+        });
+        
+        // Load data saat pertama kali
+        displayTransactions();
     </script>
 </body>
 </html>
